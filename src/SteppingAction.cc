@@ -82,6 +82,17 @@ void SteppingAction::UserSteppingAction(const G4Step * theStep)
   
   
   
+  // gamma
+  if( particleType == G4Gamma::Definition() || 
+      particleType == G4Electron::Definition() || 
+      particleType == G4Positron::Definition() )
+  { 
+    if( thePostPVName == "World" )
+      theTrack->SetTrackStatus(fKillTrackAndSecondaries);
+  }
+  
+  
+  
   // optical photon
   if( particleType == G4OpticalPhoton::OpticalPhotonDefinition() )
   { 

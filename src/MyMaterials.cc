@@ -233,7 +233,7 @@ G4Material* MyMaterials::Quartz()
   return mat;
 }
 
-G4Material* MyMaterials::SiO2Ce()
+G4Material* MyMaterials::SiO2_Ce()
 {
   G4double a, z, density;
 
@@ -296,17 +296,58 @@ G4Material* MyMaterials::Brass()
 }
 
 
+
+G4Material* MyMaterials::Aluminium()
+{
+  G4NistManager* man = G4NistManager::Instance();
+  G4Element* Al = man->FindOrBuildElement("Al");
+  
+  G4Material* mat = new G4Material("Aluminium",2.700*g/cm3,1);
+  mat->AddElement(Al,100.*perCent);
+  
+  return mat;
+}
+
+
+
+G4Material* MyMaterials::Iron()
+{
+  G4NistManager* man = G4NistManager::Instance();
+  G4Element* Fe = man->FindOrBuildElement("Fe");
+  
+  G4Material* mat = new G4Material("Iron",7.874*g/cm3,1);
+  mat->AddElement(Fe,100.*perCent);
+  
+  return mat;
+}
+
+
+
+G4Material* MyMaterials::Lead()
+{
+  G4NistManager* man = G4NistManager::Instance();
+  G4Element* Pb = man->FindOrBuildElement("Pb");
+  
+  G4Material* mat = new G4Material("Lead",11.342*g/cm3,1);
+  mat->AddElement(Pb,100.*perCent);
+  
+  return mat;
+}
+
+
+
 G4Material* MyMaterials::Tungsten()
 {
   G4NistManager* man = G4NistManager::Instance();
   G4Element* W = man->FindOrBuildElement("W");
   G4Element* Ni = man->FindOrBuildElement("Ni");
   G4Element* Cu = man->FindOrBuildElement("Cu");
-
-  G4Material* mat = new G4Material("Tungsten", 17.*g/cm3,3);
+  
+  G4Material* mat = new G4Material("Tungsten",17.*g/cm3,3);
   mat->AddElement(W,90.*perCent);
   mat->AddElement(Ni,5.*perCent);
   mat->AddElement(Cu,5.*perCent);
+  
   return mat;
 }
 
@@ -357,7 +398,7 @@ G4Material* MyMaterials::OpticalGrease()
   return mat;
 }
 
-G4Material* MyMaterials::DSBCe()  // Nanostructured glass ceramics scintillator DSB:Ce
+G4Material* MyMaterials::DSB_Ce()  // Nanostructured glass ceramics scintillator DSB:Ce
 {
   G4double a, z, density;
   G4Element*  DSB_glass = new G4Element("DSB_glass",    "DSB",   z=51,  a=124.00*g/mole);

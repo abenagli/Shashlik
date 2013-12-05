@@ -18,6 +18,9 @@ public:
   static G4Material* Air();
   static G4Material* Water();
   static G4Material* Silicon();
+  static G4Material* Aluminium();
+  static G4Material* Iron();
+  static G4Material* Lead();
   static G4Material* Brass();
   static G4Material* Tungsten();
   static G4Material* Quartz();
@@ -28,8 +31,8 @@ public:
   static G4Material* LuAG_Ce();
   static G4Material* LuAG_Pr();
   static G4Material* PWO();
-  static G4Material* DSBCe();
-  static G4Material* SiO2Ce();
+  static G4Material* DSB_Ce();
+  static G4Material* SiO2_Ce();
   
   static G4double fromNmToEv(G4double wavelength);
   static G4double fromEvToNm(G4double energy);

@@ -32,24 +32,7 @@
 
 #include "DetectorConstruction.hh"
 
-#include "G4Material.hh"
-#include "MyMaterials.hh"
-#include "G4Element.hh"
-#include "G4LogicalBorderSurface.hh"
-#include "G4LogicalSkinSurface.hh"
-#include "G4OpticalSurface.hh"
-#include "G4Box.hh"
-#include "G4LogicalVolume.hh"
-#include "G4ThreeVector.hh"
-#include "G4PVPlacement.hh"
-#include "G4PVReplica.hh"
-#include "G4SubtractionSolid.hh"
-#include "G4Tubs.hh"
-#include "G4VisAttributes.hh"
 
-
-
-//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 DetectorConstruction::DetectorConstruction(const string& configFileName)
 {
@@ -65,11 +48,13 @@ DetectorConstruction::DetectorConstruction(const string& configFileName)
   
   expHall_x = expHall_y = expHall_z = 1*m;
   
-  spacingZ = abs_d + crystal_d;
+  spacing_z = abs_d + crystal_d;
   
   module_x = module_xy;
   module_y = module_xy;
-  module_z = (NLAYERS_Z) * spacingZ;
+  module_z = (nLayers_z) * spacing_z;
+  
+  fiber_length = module_z;
 }
 
 
@@ -88,15 +73,18 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   G4cout << ">>>>>> DetectorConstruction::Construct()::begin <<<<<<" << G4endl;
   
   
+  
   //------------------------------------
   //------------- Volumes --------------
   //------------------------------------
-  G4RotationMatrix* piRot = new G4RotationMatrix;
-  piRot->rotateX(M_PI/2.*rad);  
+  
+  
+  std::vector<G4TwoVector> crystalBase;
+  fillPolygon(crystalBase,0.5*module_xy,chamfer);
   
   
   // The experimental Hall
-  G4VSolid* worldS = new G4Box("World",expHall_x,expHall_y,expHall_z);
+  G4VSolid* worldS = new G4Box("World",0.5*expHall_x,0.5*expHall_y,0.5*expHall_z);
   G4LogicalVolume* worldLV = new G4LogicalVolume(worldS,MyMaterials::Air(),"World",0,0,0);
   G4VPhysicalVolume* worldPV = new G4PVPlacement(0,G4ThreeVector(),worldLV,"World",0,false,0,true);
   
@@ -108,26 +96,67 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   
   
   // A layer
-  G4VSolid* layerS = new G4Box("Layer",0.5*module_xy,0.5*module_xy,0.5*spacingZ);
+  G4VSolid* layerS = new G4Box("Layer",0.5*module_xy,0.5*module_xy,0.5*spacing_z);
   G4LogicalVolume* layerLV = new G4LogicalVolume(layerS,MyMaterials::Air(),"Layer");
-  new G4PVReplica("Layer",layerLV,calorLV,kZAxis,NLAYERS_Z,spacingZ);
-  
-  
-  // Absorber
-  G4VSolid* absorberS = new G4Box("Absorber",0.5*module_xy,0.5*module_xy,0.5*abs_d);
-  G4LogicalVolume* absorberLV = new G4LogicalVolume(absorberS,AbMaterial,"Absorber");
-  fAbsorberPV = new G4PVPlacement(0,G4ThreeVector(0.,0.,-0.5*spacingZ+0.5*abs_d),absorberLV,"Absorber",layerLV,false,0,true);
+  new G4PVReplica("Layer",layerLV,calorLV,kZAxis,nLayers_z,spacing_z);
   
   
   // Crystal
-  G4VSolid* crystalS = new G4Box("Crystal",0.5*module_xy,0.5*module_xy,0.5*crystal_d);
+  G4VSolid* crystalS = new G4ExtrudedSolid("Crystal",crystalBase,0.5*crystal_d,G4TwoVector(0.,0.),1.,G4TwoVector(0.,0.),1.);
   G4LogicalVolume* crystalLV = new G4LogicalVolume(crystalS,ScMaterial,"Crystal");
-  fCrystalPV = new G4PVPlacement(0,G4ThreeVector(0.,0.,-0.5*spacingZ+abs_d+0.5*crystal_d),crystalLV,"Crystal",layerLV,false,0,true);
+  fCrystalPV = new G4PVPlacement(0,G4ThreeVector(0.,0.,-0.5*spacing_z+0.5*crystal_d),crystalLV,"Crystal",layerLV,false,0,true);
   
   
-
+  // Absorber
+  G4VSolid* absorberS = new G4ExtrudedSolid("Absorber",crystalBase,0.5*abs_d,G4TwoVector(0.,0.),1.,G4TwoVector(0.,0.),1.);
+  G4LogicalVolume* absorberLV = new G4LogicalVolume(absorberS,AbMaterial,"Absorber");
+  fAbsorberPV = new G4PVPlacement(0,G4ThreeVector(0.,0.,-0.5*spacing_z+0.5*abs_d+crystal_d),absorberLV,"Absorber",layerLV,false,0,true);
   
   
+  
+  // Fibers
+  G4VSolid* fiberCoreS = new G4Tubs("FiberCore",0.,fiberCore_radius,0.5*fiber_length,0.*deg,360.*deg);
+  G4VSolid* fiberCladS = new G4Tubs("FiberClad",fiberCore_radius,fiberClad_radius,0.5*fiber_length,0.*deg,360.*deg);
+  
+  G4LogicalVolume* fiberCoreLV = new G4LogicalVolume(fiberCoreS,CoMaterial,"FiberCore");
+  G4LogicalVolume* fiberCladLV = new G4LogicalVolume(fiberCladS,ClMaterial,"FiberClad");
+  
+  
+  for(int edge = 0; edge < 4; ++edge)
+  {
+    std::pair<G4TwoVector,G4TwoVector> theChamfer = getChamfer(crystalBase,edge);
+    int nTotFibers = 0;
+    
+    int numberOfRadius = 1;
+    while(1)
+    {
+      int fibersNumberInFirstRow = floor( 
+        ( (theChamfer.first - theChamfer.second).mag() - 2.* numberOfRadius * fiberClad_radius ) / // length of the usable line
+        (2 * fiberClad_radius)                                                                         // transverse length of a single fiber
+        ) ;
+      if( fibersNumberInFirstRow <= 0 ) break;
+      
+      G4double offset_x = 0.;
+      G4double offset_y = 0.;
+      
+      //PG put the first fiber
+      G4TwoVector fiberAxisPosition = centerOfTheFirstFiber(theChamfer, fibersNumberInFirstRow, fiberClad_radius, numberOfRadius) ;
+      fFiberCorePV[edge][nTotFibers] = new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false);
+      fFiberCladPV[edge][nTotFibers] = new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false);
+      ++nTotFibers;
+      
+      //PG add the following fibers in the line
+      for (int i = 1 ; i < fibersNumberInFirstRow ; ++i)
+      {
+        fiberAxisPosition = getNextCenter(theChamfer, fiberAxisPosition, fiberClad_radius, numberOfRadius);
+        fFiberCorePV[edge][nTotFibers] = new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false);
+        fFiberCladPV[edge][nTotFibers] = new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false);  
+        ++nTotFibers;
+      }
+      
+      numberOfRadius += 2;
+    }
+  }
   
   //-----------------------------------------------------
   //------------- Visualization attributes --------------
@@ -151,7 +180,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   worldLV->SetVisAttributes(VisAttWorld);
   
   G4VisAttributes* VisAttCalor = new G4VisAttributes(yellow);
-  VisAttCalor->SetVisibility(false);
+  VisAttCalor->SetVisibility(true);
   VisAttCalor->SetForceWireframe(true);
   calorLV->SetVisAttributes(VisAttCalor);
   
@@ -160,7 +189,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   VisAttLayer->SetForceWireframe(true);
   layerLV->SetVisAttributes(VisAttLayer);
   
-  G4VisAttributes* VisAttAbsorber = new G4VisAttributes(brass);
+  G4VisAttributes* VisAttAbsorber = new G4VisAttributes(gray);
   VisAttAbsorber->SetVisibility(true);
   VisAttAbsorber->SetForceWireframe(false);
   absorberLV->SetVisAttributes(VisAttAbsorber);
@@ -170,6 +199,15 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   VisAttCrystal->SetForceWireframe(false);
   crystalLV->SetVisAttributes(VisAttCrystal);
   
+  G4VisAttributes* VisAttFiberCore = new G4VisAttributes(green);
+  VisAttFiberCore->SetVisibility(true);
+  VisAttFiberCore->SetForceWireframe(false);
+  fiberCoreLV->SetVisAttributes(VisAttFiberCore);  
+  
+  G4VisAttributes* VisAttFiberClad = new G4VisAttributes(cyan);
+  VisAttFiberClad->SetVisibility(true);
+  VisAttFiberClad->SetForceWireframe(false);
+  fiberCladLV->SetVisAttributes(VisAttFiberClad);  
   
   
   
@@ -185,41 +223,26 @@ void DetectorConstruction::readConfigFile(string configFileName)
 {	
   ConfigFile config(configFileName);
   
+  config.readInto(chamfer,"chamfer");
+  config.readInto(module_xy,"module_xy");
+  config.readInto(nLayers_z,"nLayers_z");
+  
+  config.readInto(abs_material,"abs_material");
+  config.readInto(abs_d,"abs_d");
+  
   config.readInto(crystal_material,"crystal_material");
   config.readInto(crystal_risetime,"crystal_risetime");
   config.readInto(crystal_abslength,"crystal_abslength");
   config.readInto(crystal_lightyield,"crystal_lightyield");
-  
-  config.readInto(fiber_radius,"fiber_radius");
-  config.readInto(fiber_length,"fiber_length");
-  config.readInto(module_xy,"module_xy");
-  config.readInto(abs_d,"abs_d");
   config.readInto(crystal_d,"crystal_d");
-  config.readInto(NLAYERS_Z,"NLAYERS_Z");
-  config.readInto(abs_material,"abs_material");
   
+  config.readInto(fiberCore_material,"fiberCore_material");
+  config.readInto(fiberCore_radius,"fiberCore_radius");
+  config.readInto(fiberClad_material,"fiberClad_material");
+  config.readInto(fiberClad_radius,"fiberClad_radius");
+  config.readInto(fiber_length,"fiber_length");
   
-  // Crystal parameters
-  /*
-    G4double absorber_x = config.read<double>("absorber_x")*mm;
-    G4cout << "Absorber x [mm]: " << absorber_x << G4endl;
-    
-    G4double absorber_y = config.read<double>("absorber_y")*mm;
-    G4cout << "Absorber y [mm]: " << absorber_y << G4endl;
-    
-    G4double absorber_z = config.read<double>("absorber_z")*mm;
-    G4cout << "Absorber z [mm]: " << absorber_z << G4endl;
-    
-    const int NFIBERS_X = config.read<int>("NFIBERS_X");
-    G4cout << "NFIBERS_X: " << NFIBERS_X << G4endl;
-    const int NLAYERS_Z = config.read<int>("NLAYERS_Z");
-    G4cout << "NLAYERS_Z: " << NLAYERS_Z << G4endl;
-    
-    G4double spacingX = config.read<double>("spacingX")*mm;
-    G4cout << "spacingX [mm]: " << spacingX << G4endl;
-    G4double spacingZ = config.read<double>("spacingZ")*mm;
-    G4cout << "spacingZ [mm]: " << spacingZ << G4endl;
-  */
+  config.readInto(depth,"depth");
 }
 
 
@@ -231,14 +254,18 @@ void DetectorConstruction::initializeMaterials()
   // define materials
   
   AbMaterial = NULL;
-  if( abs_material == 1 ) AbMaterial = MyMaterials::Brass();
+  if     ( abs_material == 1 ) AbMaterial = MyMaterials::Brass();
   else if( abs_material == 2 ) AbMaterial = MyMaterials::Tungsten();
+  else if( abs_material == 3 ) AbMaterial = MyMaterials::Lead();
+  else if( abs_material == 4 ) AbMaterial = MyMaterials::Iron();
+  else if( abs_material == 5 ) AbMaterial = MyMaterials::Aluminium();
   else
   {
     G4cerr << "<DetectorConstructioninitializeMaterials>: Invalid absorber material specifier " << abs_material << G4endl;
     exit(-1);
   }
   G4cout << "Ab. material: "<< AbMaterial << G4endl;
+  
   
   ScMaterial = NULL;
   if     ( crystal_material == 1 ) ScMaterial = MyMaterials::LSO();
@@ -248,8 +275,8 @@ void DetectorConstruction::initializeMaterials()
   else if( crystal_material == 5 ) ScMaterial = MyMaterials::PWO();
   else if( crystal_material == 6 ) ScMaterial = MyMaterials::Air();
   else if( crystal_material == 7 ) ScMaterial = MyMaterials::Quartz();
-  else if( crystal_material == 8 ) ScMaterial = MyMaterials::DSBCe();
-  else if( crystal_material == 9 ) ScMaterial = MyMaterials::SiO2Ce();
+  else if( crystal_material == 8 ) ScMaterial = MyMaterials::DSB_Ce();
+  else if( crystal_material == 9 ) ScMaterial = MyMaterials::SiO2_Ce();
   else
   {
     G4cerr << "<DetectorConstructioninitializeMaterials>: Invalid crystal material specifier " << crystal_material << G4endl;
@@ -258,6 +285,28 @@ void DetectorConstruction::initializeMaterials()
   G4cout << "Sc. material: "<< ScMaterial << G4endl;
   
   
+  CoMaterial = NULL;
+  if     ( fiberCore_material == 1 ) CoMaterial = MyMaterials::Quartz();
+  else if( fiberCore_material == 2 ) CoMaterial = MyMaterials::SiO2_Ce();
+  else if( fiberCore_material == 3 ) CoMaterial = MyMaterials::DSB_Ce();
+  else
+  {
+    G4cerr << "<DetectorConstructioninitializeMaterials>: Invalid fiber core material specifier " << fiberCore_material << G4endl;
+    exit(-1);
+  }
+  G4cout << "Co. material: "<< CoMaterial << G4endl;
+  
+  
+  ClMaterial = NULL;
+  if     ( fiberClad_material == 1 ) ClMaterial = MyMaterials::Quartz();
+  else if( fiberClad_material == 2 ) ClMaterial = MyMaterials::SiO2_Ce();
+  else if( fiberClad_material == 3 ) ClMaterial = MyMaterials::DSB_Ce();
+  else
+  {
+    G4cerr << "<DetectorConstructioninitializeMaterials>: Invalid fiber clad material specifier " << fiberClad_material << G4endl;
+    exit(-1);
+  }
+  G4cout << "Cl. material: "<< ClMaterial << G4endl;
   
   
   
@@ -286,4 +335,57 @@ void DetectorConstruction::initializeMaterials()
       ScMaterial->GetMaterialPropertiesTable()->GetProperty("ABSLENGTH")->Energy(j);
     }
   }
+}
+
+
+
+void DetectorConstruction::fillPolygon(std::vector<G4TwoVector>& theBase, const float& side, const float& chamfer)
+{
+  // wrt the centre (0,0)
+  double delta = side - chamfer * 0.707106781188 ;
+  theBase.push_back (G4TwoVector (side, delta)) ;
+  theBase.push_back (G4TwoVector (delta, side)) ;
+  theBase.push_back (G4TwoVector (-1 * delta, side)) ;
+  theBase.push_back (G4TwoVector (-1 * side, delta)) ;
+  theBase.push_back (G4TwoVector (-1 * side, -1 * delta)) ;
+  theBase.push_back (G4TwoVector (-1 * delta, -1 * side)) ;
+  theBase.push_back (G4TwoVector (delta, -1 * side)) ;
+  theBase.push_back (G4TwoVector (side, -1 * delta)) ;
+  return ;
+}
+
+
+
+std::pair<G4TwoVector,G4TwoVector> DetectorConstruction::getChamfer(std::vector<G4TwoVector>& theBase, const int& index)
+{
+  return std::pair<G4TwoVector,G4TwoVector> (
+    theBase.at (2 * index), theBase.at (2*index + 1) ) ;
+}
+
+
+
+G4TwoVector DetectorConstruction::centerOfTheFirstFiber(std::pair<G4TwoVector,G4TwoVector>& theChamfer, const int& fibersNumberInRow, const float& fiberExternalRadius, const int& numberOfRadius)
+{
+  // assume that the chamfer coordinates are given counter-clockwise
+  // so the orthogonal vector aims towards the exterior of the chamfer
+  G4TwoVector chamferDirection = theChamfer.second - theChamfer.first ;
+  chamferDirection *= 1. / chamferDirection.mag () ; 
+  G4TwoVector chamferOrtogonal = chamferDirection ;
+  chamferOrtogonal.setX (chamferDirection.y ()) ;
+  chamferOrtogonal.setY (-1 * chamferDirection.x ()) ;
+  G4double freeSpace = (theChamfer.second-theChamfer.first).mag() - 2.*fiberExternalRadius - 2.*fiberExternalRadius*numberOfRadius - 2.*fiberExternalRadius*(fibersNumberInRow-2);
+  
+  return theChamfer.first +
+    fiberExternalRadius * numberOfRadius * chamferOrtogonal +  // go out for the length of the radius
+    fiberExternalRadius * numberOfRadius * chamferDirection +  // move towards the other edge for the space where fibers cannot fit
+    0.5 * freeSpace * chamferDirection;                        // equally divide free space
+}
+
+
+
+G4TwoVector DetectorConstruction::getNextCenter(std::pair<G4TwoVector,G4TwoVector>& theChamfer, G4TwoVector& thisCenter, const float& fiberExternalRadius, const int& numberOfRadius)
+{
+  G4TwoVector chamferDirection = theChamfer.second - theChamfer.first ;
+  chamferDirection *= 1. / chamferDirection.mag () ; 
+  return thisCenter + (2 * fiberExternalRadius) * chamferDirection ;
 }
