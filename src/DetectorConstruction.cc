@@ -112,8 +112,6 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   G4LogicalVolume* absorberLV = new G4LogicalVolume(absorberS,AbMaterial,"Absorber");
   fAbsorberPV = new G4PVPlacement(0,G4ThreeVector(0.,0.,-0.5*spacing_z+0.5*abs_d+crystal_d),absorberLV,"Absorber",layerLV,false,0,true);
   
-  
-  
   // Fibers
   G4VSolid* fiberCoreS = new G4Tubs("FiberCore",0.,fiberCore_radius,0.5*fiber_length,0.*deg,360.*deg);
   G4VSolid* fiberCladS = new G4Tubs("FiberClad",fiberCore_radius,fiberClad_radius,0.5*fiber_length,0.*deg,360.*deg);
@@ -162,7 +160,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     }
     
     numberOfRadius += 2;
-  }
+  } // while
 
   //PG second edge: a single line
   //PG ---- ---- ---- ---- ---- ---- ---- ---- ---- 
@@ -173,11 +171,12 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   edge = 1 ;
   theChamfer = getChamfer(crystalBase,edge);
 
+  numberOfRadius = 1;
   int fibersNumberInFirstRow = floor( 
-    ( (theChamfer.first - theChamfer.second).mag()) / // length of the usable line
-    (2 * fiberClad_radius)                            // transverse length of a single fiber
+    ( (theChamfer.first - theChamfer.second).mag() - 2.* numberOfRadius * fiberClad_radius ) / // length of the usable line
+    (2 * fiberClad_radius)                                                                     // transverse length of a single fiber
     ) ;
-  
+
   //PG put the first fiber
   G4TwoVector fiberAxisPosition = centerOfTheFirstFiber(theChamfer, fibersNumberInFirstRow, fiberClad_radius, numberOfRadius) ;
   fFiberCorePV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false));
@@ -200,39 +199,51 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   edge = 2 ;
   theChamfer = getChamfer(crystalBase,edge);
 
-  fibersNumberInFirstRow = floor( 
-    ( (theChamfer.first - theChamfer.second).mag()) / // length of the usable line
-    (2 * fiberClad_radius)                            // transverse length of a single fiber
+  fibersNumberInFirstRow = floor (
+      (    (theChamfer.first - theChamfer.second).mag () - 2 * fiberClad_radius * 1.41421356237)   // length of the usable line
+        /  (2 * fiberClad_radius)   // length of a single fibre
     ) ;
 
+  numberOfRadius = 1;
   //PG put the first fiber
-  G4TwoVector firstFiberInRowCenter = centerOfTheFirstFiber(theChamfer, fibersNumberInFirstRow, fiberClad_radius, numberOfRadius) ;
+  fiberAxisPosition = centerOfTheFirstFiberPG(theChamfer, fibersNumberInFirstRow, fiberClad_radius) ;
+  G4TwoVector firstFiberInRowCenter = fiberAxisPosition ;
   fFiberCorePV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+firstFiberInRowCenter.x(),offset_y+firstFiberInRowCenter.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false));
   fFiberCladPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+firstFiberInRowCenter.x(),offset_y+firstFiberInRowCenter.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false));
   
-  //PG add the following fibers in the line
+  //PG add the following fibers in the first line
   for (int i = 1 ; i < fibersNumberInFirstRow ; ++i)
-  {
-    fiberAxisPosition = getNextCenter(theChamfer, fiberAxisPosition, fiberClad_radius);
-    fFiberCorePV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false));
-    fFiberCladPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false));  
-  }
+    {
+      fiberAxisPosition = getNextCenter(theChamfer, fiberAxisPosition, fiberClad_radius);
+      fFiberCorePV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false));
+      fFiberCladPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false));  
+    }
+
+  G4TwoVector chamferDirection = theChamfer.second - theChamfer.first ;
+  G4TwoVector chamferOrtogonal = chamferDirection ;
+  chamferDirection *= 1. / chamferDirection.mag () ; 
+  chamferOrtogonal.setX (chamferDirection.y ()) ;
+  chamferOrtogonal.setY (-1 * chamferDirection.x ()) ;
 
   int safetyCounter = 0 ;
   do {
       ++safetyCounter ;
       // put the first fibre of the second row
-      firstFiberInRowCenter = centerOfTheFirstFibreOnSecondLayer (theChamfer, fiberClad_radius, firstFiberInRowCenter) ;
-      if ((theChamfer.second - theChamfer.first).dot (theChamfer.second - fiberAxisPosition) > 0.5 * chamfer)
+      fiberAxisPosition = centerOfTheFirstFibreOnSecondLayer (theChamfer, fiberClad_radius, firstFiberInRowCenter) ;
+      firstFiberInRowCenter = fiberAxisPosition ;
+
+      if (chamferOrtogonal.dot (fiberAxisPosition - theChamfer.second) > 0.5 * chamfer)
         { 
           //PG no more lines of fibres can be put FIXME
           break ;
         }
+
       if (checkIfOutOfChamfer (fiberClad_radius, fiberAxisPosition, crystalBase, 2)) 
         {
-          fFiberCorePV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+firstFiberInRowCenter.x(),offset_y+firstFiberInRowCenter.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false));
-          fFiberCladPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+firstFiberInRowCenter.x(),offset_y+firstFiberInRowCenter.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false));
+          fFiberCorePV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false));
+          fFiberCladPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false));
         }
+
       //PG add the following fibres in the line
       for (int i = 1 ; i < fibersNumberInFirstRow ; ++i)
         {
@@ -246,8 +257,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
             { break ; }  
         }
      }  
-   while (safetyCounter < 100) ;
-   if (safetyCounter > 99)
+   while (safetyCounter < 10) ;
+   if (safetyCounter > 10)
      {
        std::cout << "warning: abnormal termination of loop in filling the third chamfer" << std::endl ;
      }
@@ -526,6 +537,32 @@ G4TwoVector DetectorConstruction::centerOfTheFirstFiber(std::pair<G4TwoVector,G4
 }
 
 
+
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+
+G4TwoVector 
+DetectorConstruction::centerOfTheFirstFiberPG(
+    std::pair<G4TwoVector,G4TwoVector>&  theChamfer, 
+    const int&                           fibersNumberInRow, 
+    const float&                         fiberExternalRadius)
+{
+  // assume that the chamfer coordinates are given counter-clockwise
+  // so the orthogonal vector aims towards the exterior of the chamfer
+  G4TwoVector chamferDirection = theChamfer.second - theChamfer.first ;
+  chamferDirection *= 1. / chamferDirection.mag () ; 
+  G4TwoVector chamferOrtogonal = chamferDirection ;
+  chamferOrtogonal.setX (chamferDirection.y ()) ;
+  chamferOrtogonal.setY (-1 * chamferDirection.x ()) ;
+  G4double freeSpace = (theChamfer.second-theChamfer.first).mag () 
+                      - 2. * fiberExternalRadius * fibersNumberInRow ;
+  return theChamfer.first +                                        // the starting point
+         fiberExternalRadius * chamferOrtogonal +                  // go out for the length of the radius
+         (0.5 * freeSpace + fiberExternalRadius) * chamferDirection ;
+}
+
+
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 
@@ -554,39 +591,48 @@ G4TwoVector DetectorConstruction::getNextCenter(std::pair<G4TwoVector,G4TwoVecto
      |     |
    0 \_____/ 1      
 */
-bool DetectorConstruction::checkIfOutOfChamfer (double radius, G4TwoVector centre, std::vector<G4TwoVector> solid, int chamferIndex)
+bool 
+DetectorConstruction::checkIfOutOfChamfer (
+    double                    radius, 
+    G4TwoVector               centre, 
+    std::vector<G4TwoVector>  solid, 
+    int                       chamferIndex)
 {
   // check wrt the side before the chamfer 
   // -------------------------------------
-  
+
+  //FIXME this is bugged I don't understand why  !!!
   G4TwoVector vectorFromFirstEdgeOFChamfer = centre - solid.at (2 * chamferIndex) ;
 
   int index = 2 * chamferIndex - 1 ;
   if (index < 0) index += 8 ;
-  G4TwoVector sideDirection = solid.at (2 * chamferIndex) - solid.at (index) ;
+
+  G4TwoVector sideDirection = solid.at (index) - solid.at (2 * chamferIndex) ;
   sideDirection *= 1. / sideDirection.mag () ; 
   G4TwoVector sideOrtogonal = sideDirection ;
   sideOrtogonal.setX (sideDirection.y ()) ;
   sideOrtogonal.setY (-1 * sideDirection.x ()) ;
 
-  double distance = sideOrtogonal.dot (vectorFromFirstEdgeOFChamfer) ;
-  // since the ortogonal aims outwards with respect to the crystal model, the distance should be at least minus radius
-  if (distance > -1 * radius) return false ;
+  float distance = sideOrtogonal.dot (vectorFromFirstEdgeOFChamfer) ;
+  if (distance < radius) return false ;
 
   // check wrt the side after the chamfer 
   // -------------------------------------
 
-  index = 2 * chamferIndex + 1 ;
+  G4TwoVector vectorFromSecondEdgeOFChamfer = centre - solid.at (2 * chamferIndex + 1) ;
+
+  index = 2 * chamferIndex + 2 ;
   if (index > 7) index -= 8 ;
-  sideDirection = solid.at (2 * chamferIndex) - solid.at (index) ;
+  sideDirection = solid.at (2 * chamferIndex + 1) - solid.at (index) ;
   sideDirection *= 1. / sideDirection.mag () ; 
   sideOrtogonal = sideDirection ;
   sideOrtogonal.setX (sideDirection.y ()) ;
   sideOrtogonal.setY (-1 * sideDirection.x ()) ;
   
-  distance = sideOrtogonal.dot (vectorFromFirstEdgeOFChamfer) ;
-  // since the ortogonal aims outwards with respect to the crystal model, the distance should be at least minus radius
-  if (distance > -1 * radius) return false ;
+  distance = sideOrtogonal.dot (vectorFromSecondEdgeOFChamfer) ;
+  // since the ortogonal aims outwards with respect to the crystal model, 
+  // the distance should be at least minus radius
+  if (fabs (distance) < radius) return false ;
 
   return true ;
 }
@@ -595,18 +641,24 @@ bool DetectorConstruction::checkIfOutOfChamfer (double radius, G4TwoVector centr
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 
-G4TwoVector DetectorConstruction::centerOfTheFirstFibreOnSecondLayer (std::pair<G4TwoVector, G4TwoVector> & theChamfer, const float & fiberExternalRadius, G4TwoVector previousLayerStart)
+G4TwoVector 
+DetectorConstruction::centerOfTheFirstFibreOnSecondLayer (
+    std::pair<G4TwoVector, G4TwoVector> &  theChamfer, 
+    const float &                          fiberExternalRadius, 
+    G4TwoVector                            previousLayerStart)
 {
   // assume that the chamfer coordinates are given counter-clockwise
   // so the orthogonal vector aims towards the exterior of the chamfer
+
   G4TwoVector chamferDirection = theChamfer.second - theChamfer.first ;
   chamferDirection *= 1. / chamferDirection.mag () ; 
   G4TwoVector chamferOrtogonal = chamferDirection ;
   chamferOrtogonal.setX (chamferDirection.y ()) ;
   chamferOrtogonal.setY (-1 * chamferDirection.x ()) ;
-  return previousLayerStart -                                       // the starting point
-         fiberExternalRadius * chamferDirection +                   // go out for the length of the radius
-         (fiberExternalRadius * 1.73205080757) * chamferOrtogonal ; // move towards the other edge for the space where fibers cannot fit
+
+  return previousLayerStart                                            // the starting point
+         + fiberExternalRadius * chamferDirection                       
+         + (fiberExternalRadius * 1.73205080757) * chamferOrtogonal ; 
 }
 
 

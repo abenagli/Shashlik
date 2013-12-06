@@ -82,6 +82,7 @@ public:
   
   std::pair<G4TwoVector,G4TwoVector> getChamfer(std::vector<G4TwoVector>& theBase, const int& index);
   G4TwoVector centerOfTheFirstFiber(std::pair<G4TwoVector,G4TwoVector>& theChamfer, const int& fibresNumberInRow, const float& fiberExternalRadius, const int& numberOfRadius);
+  G4TwoVector centerOfTheFirstFiberPG(std::pair<G4TwoVector,G4TwoVector>& theChamfer, const int& fibresNumberInRow, const float& fiberExternalRadius);
   G4TwoVector getNextCenter(std::pair<G4TwoVector,G4TwoVector>& theChamfer, G4TwoVector& thisCenter, const float& fiberExternalRadius);
   G4TwoVector centerOfTheFirstFibreOnSecondLayer (std::pair<G4TwoVector, G4TwoVector> & theChamfer, const float & fiberExternalRadius, G4TwoVector previousLayerStart);
   bool checkIfOutOfChamfer (double radius, G4TwoVector centre, std::vector<G4TwoVector> solid, int chamferIndex);
