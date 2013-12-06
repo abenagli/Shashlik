@@ -105,8 +105,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   G4VSolid* crystalS = new G4ExtrudedSolid("Crystal",crystalBase,0.5*crystal_d,G4TwoVector(0.,0.),1.,G4TwoVector(0.,0.),1.);
   G4LogicalVolume* crystalLV = new G4LogicalVolume(crystalS,ScMaterial,"Crystal");
   fCrystalPV = new G4PVPlacement(0,G4ThreeVector(0.,0.,-0.5*spacing_z+0.5*crystal_d),crystalLV,"Crystal",layerLV,false,0,true);
-  
-  
+    
   // Absorber
   G4VSolid* absorberS = new G4ExtrudedSolid("Absorber",crystalBase,0.5*abs_d,G4TwoVector(0.,0.),1.,G4TwoVector(0.,0.),1.);
   G4LogicalVolume* absorberLV = new G4LogicalVolume(absorberS,AbMaterial,"Absorber");
@@ -266,46 +265,36 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   //PG fourth edge: a single large fiber
   //PG ---- ---- ---- ---- ---- ---- ---- ---- ---- 
 
-  //PG to be placed FIXME
+  float bigfiberClad_radius = chamfer * 1.73205080757 * 0.125 ;
+  bigfiberClad_radius *= 0.95 ;
+  float bigfiberCore_radius = 0.5 * bigfiberClad_radius ;
 
+  G4VSolid* bigfiberCoreS = new G4Tubs("bigfiberCore",0.,bigfiberCore_radius,0.5*fiber_length,0.*deg,360.*deg);
+  G4VSolid* bigfiberCladS = new G4Tubs("bigfiberClad",bigfiberCore_radius,bigfiberClad_radius,0.5*fiber_length,0.*deg,360.*deg);
   
-/*  
-  for(int edge = 0; edge < 4; ++edge)
-  {
-    std::pair<G4TwoVector,G4TwoVector> theChamfer = getChamfer(crystalBase,edge);
-    int nTotFibers = 0;
-    
-    int numberOfRadius = 1;
-    while(1)
-    {
-      int fibersNumberInFirstRow = floor( 
-        ( (theChamfer.first - theChamfer.second).mag() - 2.* numberOfRadius * fiberClad_radius ) / // length of the usable line
-        (2 * fiberClad_radius)                                                                         // transverse length of a single fiber
-        ) ;
-      if( fibersNumberInFirstRow <= 0 ) break;
-      
-      G4double offset_x = 0.;
-      G4double offset_y = 0.;
-      
-      //PG put the first fiber
-      G4TwoVector fiberAxisPosition = centerOfTheFirstFiber(theChamfer, fibersNumberInFirstRow, fiberClad_radius, numberOfRadius) ;
-      fFiberCorePV[edge][nTotFibers] = new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false);
-      fFiberCladPV[edge][nTotFibers] = new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false);
-      ++nTotFibers;
-      
-      //PG add the following fibers in the line
-      for (int i = 1 ; i < fibersNumberInFirstRow ; ++i)
-      {
-        fiberAxisPosition = getNextCenter(theChamfer, fiberAxisPosition, fiberClad_radius);
-        fFiberCorePV[edge][nTotFibers] = new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false);
-        fFiberCladPV[edge][nTotFibers] = new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false);  
-        ++nTotFibers;
-      }
-      
-      numberOfRadius += 2;
-    }
-  }
-*/
+  G4LogicalVolume* bigfiberCoreLV = new G4LogicalVolume(bigfiberCoreS,CoMaterial,"bigfiberCore");
+  G4LogicalVolume* bigfiberCladLV = new G4LogicalVolume(bigfiberCladS,ClMaterial,"bigfiberClad");
+
+  fFiberCorePV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
+  fFiberCladPV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
+
+  // find the center
+  
+  edge = 3 ;
+  theChamfer = getChamfer(crystalBase,edge);
+
+  chamferDirection = theChamfer.second - theChamfer.first ;
+  chamferOrtogonal = chamferDirection ;
+  chamferDirection *= 1. / chamferDirection.mag () ; 
+  chamferOrtogonal.setX (chamferDirection.y ()) ;
+  chamferOrtogonal.setY (-1 * chamferDirection.x ()) ;
+  
+  fiberAxisPosition = theChamfer.first 
+      + 0.5 * chamfer * chamferDirection
+      + bigfiberClad_radius * chamferOrtogonal ;
+  fFiberCorePV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),bigfiberCoreLV,Form("BigFiberCore%d",edge),worldLV,false,0,false));
+  fFiberCladPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),bigfiberCladLV,Form("BigFiberClad%d",edge),worldLV,false,0,false));
+
   
   //-----------------------------------------------------
   //------------- Visualization attributes --------------
@@ -352,11 +341,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   VisAttFiberCore->SetVisibility(true);
   VisAttFiberCore->SetForceWireframe(false);
   fiberCoreLV->SetVisAttributes(VisAttFiberCore);  
+  bigfiberCoreLV->SetVisAttributes(VisAttFiberCore);  
   
   G4VisAttributes* VisAttFiberClad = new G4VisAttributes(cyan);
   VisAttFiberClad->SetVisibility(true);
   VisAttFiberClad->SetForceWireframe(false);
   fiberCladLV->SetVisAttributes(VisAttFiberClad);  
+  bigfiberCladLV->SetVisAttributes(VisAttFiberClad);  
   
   
   
