@@ -120,8 +120,145 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   
   G4LogicalVolume* fiberCoreLV = new G4LogicalVolume(fiberCoreS,CoMaterial,"FiberCore");
   G4LogicalVolume* fiberCladLV = new G4LogicalVolume(fiberCladS,ClMaterial,"FiberClad");
+
+  G4double offset_x = 0.;
+  G4double offset_y = 0.;
+
+  //PG first edge: chessboard disposition
+  //PG ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+
+  fFiberCorePV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
+  fFiberCladPV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
+
+  int edge = 0 ;
+  std::pair<G4TwoVector,G4TwoVector> theChamfer = getChamfer(crystalBase, edge);
+
+  int nTotFibers = 0;  
+  int numberOfRadius = 1;
+  while(1)
+  {
+    int fibersNumberInFirstRow = floor( 
+      ( (theChamfer.first - theChamfer.second).mag() - 2.* numberOfRadius * fiberClad_radius ) / // length of the usable line
+      (2 * fiberClad_radius)                                                                     // transverse length of a single fiber
+      ) ;
+    if( fibersNumberInFirstRow <= 0 ) break;
+    
+    G4double offset_x = 0.;
+    G4double offset_y = 0.;
+    
+    //PG put the first fiber
+    G4TwoVector fiberAxisPosition = centerOfTheFirstFiber(theChamfer, fibersNumberInFirstRow, fiberClad_radius, numberOfRadius) ;
+    fFiberCorePV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false));
+    fFiberCladPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false));
+    ++nTotFibers;
+    
+    //PG add the following fibers in the line
+    for (int i = 1 ; i < fibersNumberInFirstRow ; ++i)
+    {
+      fiberAxisPosition = getNextCenter(theChamfer, fiberAxisPosition, fiberClad_radius);
+      fFiberCorePV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false));
+      fFiberCladPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false));  
+      ++nTotFibers;
+    }
+    
+    numberOfRadius += 2;
+  }
+
+  //PG second edge: a single line
+  //PG ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+
+  fFiberCorePV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
+  fFiberCladPV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
+
+  edge = 1 ;
+  theChamfer = getChamfer(crystalBase,edge);
+
+  int fibersNumberInFirstRow = floor( 
+    ( (theChamfer.first - theChamfer.second).mag()) / // length of the usable line
+    (2 * fiberClad_radius)                            // transverse length of a single fiber
+    ) ;
   
+  //PG put the first fiber
+  G4TwoVector fiberAxisPosition = centerOfTheFirstFiber(theChamfer, fibersNumberInFirstRow, fiberClad_radius, numberOfRadius) ;
+  fFiberCorePV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false));
+  fFiberCladPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false));
   
+  //PG add the following fibers in the line
+  for (int i = 1 ; i < fibersNumberInFirstRow ; ++i)
+  {
+    fiberAxisPosition = getNextCenter(theChamfer, fiberAxisPosition, fiberClad_radius);
+    fFiberCorePV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false));
+    fFiberCladPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false));  
+  }
+  
+  //PG third edge: the most compact disposition is possible
+  //PG ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+
+  fFiberCorePV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
+  fFiberCladPV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
+
+  edge = 2 ;
+  theChamfer = getChamfer(crystalBase,edge);
+
+  fibersNumberInFirstRow = floor( 
+    ( (theChamfer.first - theChamfer.second).mag()) / // length of the usable line
+    (2 * fiberClad_radius)                            // transverse length of a single fiber
+    ) ;
+
+  //PG put the first fiber
+  G4TwoVector firstFiberInRowCenter = centerOfTheFirstFiber(theChamfer, fibersNumberInFirstRow, fiberClad_radius, numberOfRadius) ;
+  fFiberCorePV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+firstFiberInRowCenter.x(),offset_y+firstFiberInRowCenter.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false));
+  fFiberCladPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+firstFiberInRowCenter.x(),offset_y+firstFiberInRowCenter.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false));
+  
+  //PG add the following fibers in the line
+  for (int i = 1 ; i < fibersNumberInFirstRow ; ++i)
+  {
+    fiberAxisPosition = getNextCenter(theChamfer, fiberAxisPosition, fiberClad_radius);
+    fFiberCorePV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false));
+    fFiberCladPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false));  
+  }
+
+  int safetyCounter = 0 ;
+  do {
+      ++safetyCounter ;
+      // put the first fibre of the second row
+      firstFiberInRowCenter = centerOfTheFirstFibreOnSecondLayer (theChamfer, fiberClad_radius, firstFiberInRowCenter) ;
+      if ((theChamfer.second - theChamfer.first).dot (theChamfer.second - fiberAxisPosition) > 0.5 * chamfer)
+        { 
+          //PG no more lines of fibres can be put FIXME
+          break ;
+        }
+      if (checkIfOutOfChamfer (fiberClad_radius, fiberAxisPosition, crystalBase, 2)) 
+        {
+          fFiberCorePV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+firstFiberInRowCenter.x(),offset_y+firstFiberInRowCenter.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false));
+          fFiberCladPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+firstFiberInRowCenter.x(),offset_y+firstFiberInRowCenter.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false));
+        }
+      //PG add the following fibres in the line
+      for (int i = 1 ; i < fibersNumberInFirstRow ; ++i)
+        {
+          fiberAxisPosition = getNextCenter (theChamfer, fiberAxisPosition, fiberClad_radius) ;
+          if (checkIfOutOfChamfer (fiberClad_radius, fiberAxisPosition, crystalBase, 2)) 
+            {
+              fFiberCorePV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false));
+              fFiberCladPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false));
+            }
+          else
+            { break ; }  
+        }
+     }  
+   while (safetyCounter < 100) ;
+   if (safetyCounter > 99)
+     {
+       std::cout << "warning: abnormal termination of loop in filling the third chamfer" << std::endl ;
+     }
+
+  //PG fourth edge: a single large fiber
+  //PG ---- ---- ---- ---- ---- ---- ---- ---- ---- 
+
+  //PG to be placed FIXME
+
+  
+/*  
   for(int edge = 0; edge < 4; ++edge)
   {
     std::pair<G4TwoVector,G4TwoVector> theChamfer = getChamfer(crystalBase,edge);
@@ -148,7 +285,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
       //PG add the following fibers in the line
       for (int i = 1 ; i < fibersNumberInFirstRow ; ++i)
       {
-        fiberAxisPosition = getNextCenter(theChamfer, fiberAxisPosition, fiberClad_radius, numberOfRadius);
+        fiberAxisPosition = getNextCenter(theChamfer, fiberAxisPosition, fiberClad_radius);
         fFiberCorePV[edge][nTotFibers] = new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreLV,Form("FiberCore%d",edge),worldLV,false,0,false);
         fFiberCladPV[edge][nTotFibers] = new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false);  
         ++nTotFibers;
@@ -157,6 +294,7 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
       numberOfRadius += 2;
     }
   }
+*/
   
   //-----------------------------------------------------
   //------------- Visualization attributes --------------
@@ -391,7 +529,7 @@ G4TwoVector DetectorConstruction::centerOfTheFirstFiber(std::pair<G4TwoVector,G4
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 
-G4TwoVector DetectorConstruction::getNextCenter(std::pair<G4TwoVector,G4TwoVector>& theChamfer, G4TwoVector& thisCenter, const float& fiberExternalRadius, const int& numberOfRadius)
+G4TwoVector DetectorConstruction::getNextCenter(std::pair<G4TwoVector,G4TwoVector>& theChamfer, G4TwoVector& thisCenter, const float& fiberExternalRadius)
 {
   G4TwoVector chamferDirection = theChamfer.second - theChamfer.first ;
   chamferDirection *= 1. / chamferDirection.mag () ; 
@@ -457,7 +595,7 @@ bool DetectorConstruction::checkIfOutOfChamfer (double radius, G4TwoVector centr
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 
-G4TwoVector DetectorConstruction::centerOfTheFirstFibreOnSecondLayer (std::pair<G4TwoVector, G4TwoVector> & theChamfer, const int & fibresNumberInRow, const float & fiberExternalRadius, G4TwoVector previousLayerStart)
+G4TwoVector DetectorConstruction::centerOfTheFirstFibreOnSecondLayer (std::pair<G4TwoVector, G4TwoVector> & theChamfer, const float & fiberExternalRadius, G4TwoVector previousLayerStart)
 {
   // assume that the chamfer coordinates are given counter-clockwise
   // so the orthogonal vector aims towards the exterior of the chamfer
