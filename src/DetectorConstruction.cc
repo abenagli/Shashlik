@@ -338,6 +338,8 @@ void DetectorConstruction::initializeMaterials()
 }
 
 
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
 
 void DetectorConstruction::fillPolygon(std::vector<G4TwoVector>& theBase, const float& side, const float& chamfer)
 {
@@ -355,6 +357,8 @@ void DetectorConstruction::fillPolygon(std::vector<G4TwoVector>& theBase, const 
 }
 
 
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
 
 std::pair<G4TwoVector,G4TwoVector> DetectorConstruction::getChamfer(std::vector<G4TwoVector>& theBase, const int& index)
 {
@@ -362,6 +366,8 @@ std::pair<G4TwoVector,G4TwoVector> DetectorConstruction::getChamfer(std::vector<
     theBase.at (2 * index), theBase.at (2*index + 1) ) ;
 }
 
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 
 
 G4TwoVector DetectorConstruction::centerOfTheFirstFiber(std::pair<G4TwoVector,G4TwoVector>& theChamfer, const int& fibersNumberInRow, const float& fiberExternalRadius, const int& numberOfRadius)
@@ -382,6 +388,8 @@ G4TwoVector DetectorConstruction::centerOfTheFirstFiber(std::pair<G4TwoVector,G4
 }
 
 
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
 
 G4TwoVector DetectorConstruction::getNextCenter(std::pair<G4TwoVector,G4TwoVector>& theChamfer, G4TwoVector& thisCenter, const float& fiberExternalRadius, const int& numberOfRadius)
 {
@@ -389,3 +397,78 @@ G4TwoVector DetectorConstruction::getNextCenter(std::pair<G4TwoVector,G4TwoVecto
   chamferDirection *= 1. / chamferDirection.mag () ; 
   return thisCenter + (2 * fiberExternalRadius) * chamferDirection ;
 }
+
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+
+/**
+- check whether a fibre is out of the chamfer
+- does NOT check whether the fibre enters the crystal volume
+- assumes that the edges follow this notation in the solid front face:
+      6     5
+   7 /-----\ 4
+     |     |
+   0 \_____/ 3
+      1    2
+- the chamfer index goes as:      
+   3 /-----\ 2
+     |     |
+   0 \_____/ 1      
+*/
+bool DetectorConstruction::checkIfOutOfChamfer (double radius, G4TwoVector centre, std::vector<G4TwoVector> solid, int chamferIndex)
+{
+  // check wrt the side before the chamfer 
+  // -------------------------------------
+  
+  G4TwoVector vectorFromFirstEdgeOFChamfer = centre - solid.at (2 * chamferIndex) ;
+
+  int index = 2 * chamferIndex - 1 ;
+  if (index < 0) index += 8 ;
+  G4TwoVector sideDirection = solid.at (2 * chamferIndex) - solid.at (index) ;
+  sideDirection *= 1. / sideDirection.mag () ; 
+  G4TwoVector sideOrtogonal = sideDirection ;
+  sideOrtogonal.setX (sideDirection.y ()) ;
+  sideOrtogonal.setY (-1 * sideDirection.x ()) ;
+
+  double distance = sideOrtogonal.dot (vectorFromFirstEdgeOFChamfer) ;
+  // since the ortogonal aims outwards with respect to the crystal model, the distance should be at least minus radius
+  if (distance > -1 * radius) return false ;
+
+  // check wrt the side after the chamfer 
+  // -------------------------------------
+
+  index = 2 * chamferIndex + 1 ;
+  if (index > 7) index -= 8 ;
+  sideDirection = solid.at (2 * chamferIndex) - solid.at (index) ;
+  sideDirection *= 1. / sideDirection.mag () ; 
+  sideOrtogonal = sideDirection ;
+  sideOrtogonal.setX (sideDirection.y ()) ;
+  sideOrtogonal.setY (-1 * sideDirection.x ()) ;
+  
+  distance = sideOrtogonal.dot (vectorFromFirstEdgeOFChamfer) ;
+  // since the ortogonal aims outwards with respect to the crystal model, the distance should be at least minus radius
+  if (distance > -1 * radius) return false ;
+
+  return true ;
+}
+
+
+//....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
+
+
+G4TwoVector DetectorConstruction::centerOfTheFirstFibreOnSecondLayer (std::pair<G4TwoVector, G4TwoVector> & theChamfer, const int & fibresNumberInRow, const float & fiberExternalRadius, G4TwoVector previousLayerStart)
+{
+  // assume that the chamfer coordinates are given counter-clockwise
+  // so the orthogonal vector aims towards the exterior of the chamfer
+  G4TwoVector chamferDirection = theChamfer.second - theChamfer.first ;
+  chamferDirection *= 1. / chamferDirection.mag () ; 
+  G4TwoVector chamferOrtogonal = chamferDirection ;
+  chamferOrtogonal.setX (chamferDirection.y ()) ;
+  chamferOrtogonal.setY (-1 * chamferDirection.x ()) ;
+  return previousLayerStart -                                       // the starting point
+         fiberExternalRadius * chamferDirection +                   // go out for the length of the radius
+         (fiberExternalRadius * 1.73205080757) * chamferOrtogonal ; // move towards the other edge for the space where fibers cannot fit
+}
+
+
