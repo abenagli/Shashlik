@@ -254,13 +254,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
               fFiberCladPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false));
             }
           else
-            { break ; }  
+            { continue ; }  
         }
      }  
-   while (safetyCounter < 10) ;
-   if (safetyCounter > 10)
+   while (safetyCounter < 20) ;
+   if (safetyCounter > 20)
      {
-       std::cout << "warning: abnormal termination of loop in filling the third chamfer" << std::endl ;
+       std::cout << "WARNING: abnormal termination of loop in filling the third chamfer" << std::endl ;
      }
 
   //PG fourth edge: a single large fiber
@@ -614,10 +614,13 @@ DetectorConstruction::checkIfOutOfChamfer (
   sideOrtogonal.setY (-1 * sideDirection.x ()) ;
 
   float distance = sideOrtogonal.dot (vectorFromFirstEdgeOFChamfer) ;
-  if (distance < radius) return false ;
+  if (distance < radius) return false ; 
+//  if (fabs (distance) < radius) return false ;
 
   // check wrt the side after the chamfer 
   // -------------------------------------
+
+  //FIXME this works    !!!!!
 
   G4TwoVector vectorFromSecondEdgeOFChamfer = centre - solid.at (2 * chamferIndex + 1) ;
 
@@ -632,7 +635,7 @@ DetectorConstruction::checkIfOutOfChamfer (
   distance = sideOrtogonal.dot (vectorFromSecondEdgeOFChamfer) ;
   // since the ortogonal aims outwards with respect to the crystal model, 
   // the distance should be at least minus radius
-  if (fabs (distance) < radius) return false ;
+  if (distance < radius) return false ;
 
   return true ;
 }
