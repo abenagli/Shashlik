@@ -138,7 +138,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   //PG first edge: chessboard disposition
   //PG ---- ---- ---- ---- ---- ---- ---- ---- ---- 
 
-  fFiberCorePV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
+  fFiberCoreInsPV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
+  fFiberCoreOutPV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
   fFiberCladPV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
 
   int edge = 0 ;
@@ -180,7 +181,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   //PG second edge: a single line
   //PG ---- ---- ---- ---- ---- ---- ---- ---- ---- 
 
-  fFiberCorePV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
+  fFiberCoreInsPV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
+  fFiberCoreOutPV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
   fFiberCladPV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
 
   edge = 1 ;
@@ -210,7 +212,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   //PG third edge: the most compact disposition is possible
   //PG ---- ---- ---- ---- ---- ---- ---- ---- ---- 
 
-  fFiberCorePV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
+  fFiberCoreInsPV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
+  fFiberCoreOutPV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
   fFiberCladPV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
 
   edge = 2 ;
@@ -291,13 +294,16 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   bigfiberClad_radius *= 0.95 ;
   float bigfiberCore_radius = 0.5 * bigfiberClad_radius ;
 
-  G4VSolid* bigfiberCoreS = new G4Tubs("bigfiberCore",0.,bigfiberCore_radius,0.5*fiber_length,0.*deg,360.*deg);
+  G4VSolid* bigfiberCoreInsS = new G4Tubs("bigfiberCoreIns",0.,bigfiberCore_radius * 0.99,0.5*fiber_length,0.*deg,360.*deg);
+  G4VSolid* bigfiberCoreOutS = new G4Tubs("bigfiberCoreOut",bigfiberCore_radius * 0.99,bigfiberCore_radius,0.5*fiber_length,0.*deg,360.*deg);
   G4VSolid* bigfiberCladS = new G4Tubs("bigfiberClad",bigfiberCore_radius,bigfiberClad_radius,0.5*fiber_length,0.*deg,360.*deg);
   
-  G4LogicalVolume* bigfiberCoreLV = new G4LogicalVolume(bigfiberCoreS,CoMaterial,"bigfiberCore");
+  G4LogicalVolume* bigfiberCoreInsLV = new G4LogicalVolume(bigfiberCoreInsS,CoMaterial,"bigfiberCoreIns");
+  G4LogicalVolume* bigfiberCoreOutLV = new G4LogicalVolume(bigfiberCoreOutS,CoMaterial,"bigfiberCoreOut");
   G4LogicalVolume* bigfiberCladLV = new G4LogicalVolume(bigfiberCladS,ClMaterial,"bigfiberClad");
 
-  fFiberCorePV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
+  fFiberCoreInsPV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
+  fFiberCoreOutPV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
   fFiberCladPV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
 
   // find the center
@@ -314,7 +320,8 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   fiberAxisPosition = theChamfer.first 
       + 0.5 * chamfer * chamferDirection
       + bigfiberClad_radius * chamferOrtogonal ;
-  fFiberCorePV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),bigfiberCoreLV,Form("BigFiberCore%d",edge),worldLV,false,0,false));
+  fFiberCoreInsPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),bigfiberCoreInsLV,Form("BigFiberCoreIns%d",edge),worldLV,false,0,false));
+  fFiberCoreOutPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),bigfiberCoreOutLV,Form("BigFiberCoreOut%d",edge),worldLV,false,0,false));
   fFiberCladPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),bigfiberCladLV,Form("BigFiberClad%d",edge),worldLV,false,0,false));
 
   

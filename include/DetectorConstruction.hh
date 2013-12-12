@@ -96,22 +96,23 @@ private:
 //  G4VPhysicalVolume* fFiberCorePV[4][100];   // the fiber physical volume
 //  G4VPhysicalVolume* fFiberCladPV[4][100];   // the fiber physical volume
 
-  std::vector <std::vector <G4VPhysicalVolume*> > fFiberCorePV ;   // the fiber physical volume
-  std::vector <std::vector <G4VPhysicalVolume*> > fFiberCladPV ;   // the fiber physical volume
+  std::vector <std::vector <G4VPhysicalVolume*> > fFiberCoreInsPV ;   // the fiber physical volume
+  std::vector <std::vector <G4VPhysicalVolume*> > fFiberCoreOutPV ;   // the fiber physical volume
+  std::vector <std::vector <G4VPhysicalVolume*> > fFiberCladPV ;      // the fiber physical volume
   
-  G4double expHall_x;
-  G4double expHall_y;
-  G4double expHall_z;
+  G4double  expHall_x;
+  G4double  expHall_y;
+  G4double  expHall_z;
+            
+  G4double  chamfer;
+  G4double  module_xy;
+  G4double  module_x;
+  G4double  module_y;
+  G4double  module_z;
+  G4double  spacing_z;
+  G4int     nLayers_z;
   
-  G4double chamfer;
-  G4double module_xy;
-  G4double module_x;
-  G4double module_y;
-  G4double module_z;
-  G4double spacing_z;
-  G4int nLayers_z;
-  
-  G4int abs_material;
+  G4int    abs_material;
   G4double abs_d;
   
   G4int    crystal_material;
@@ -121,9 +122,9 @@ private:
   G4double crystal_induced_abslength;
   G4double crystal_d;
   
-  G4int fiberCore_material;
+  G4int    fiberCore_material;
   G4double fiberCore_radius;
-  G4int fiberClad_material;
+  G4int    fiberClad_material;
   G4double fiberClad_radius;
   G4double fiber_length;
   
