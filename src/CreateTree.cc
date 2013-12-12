@@ -6,7 +6,8 @@ CreateTree* CreateTree::fInstance = NULL;
 
 
 
-CreateTree::CreateTree(TString name, bool energy_fiber, bool init_data, bool pos_fiber, bool opPhotons, bool timing)
+CreateTree::CreateTree(TString name, bool energy_fiber, bool init_data, bool pos_fiber, bool opPhotons, bool timing) :
+  totalPhLengthInChamfer ({0., 0., 0., 0.})
 {
   if( fInstance )
   {

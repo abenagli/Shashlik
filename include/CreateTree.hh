@@ -42,6 +42,8 @@ public:
   bool Timing()       const { return this -> TIMING;       };
   
   int Event;
+
+  float totalPhLengthInChamfer[4] ;
   
   float InitialEnergy;
   
