@@ -43,13 +43,15 @@ SteppingAction::~SteppingAction()
 void SteppingAction::UserSteppingAction(const G4Step * theStep)
 {
 //  G4Track* theTrack = theStep->GetTrack();
-//  G4ParticleDefinition* particleType = theTrack->GetDefinition();
+  G4ParticleDefinition* particleType = theTrack->GetDefinition();
   
+  G4StepPoint* thePrePoint  = theStep->GetPreStepPoint();
+  G4StepPoint* thePostPoint = theStep->GetPostStepPoint();
   G4VPhysicalVolume* thePrePV  = thePrePoint ->GetPhysicalVolume();
   G4VPhysicalVolume* thePostPV = thePostPoint->GetPhysicalVolume();
   G4String thePrePVName  = ""; if( thePrePV )  thePrePVName  = thePrePV  -> GetName();
   G4String thePostPVName = ""; if( thePostPV ) thePostPVName = thePostPV -> GetName();
-  
+    
   // optical photon
   if( particleType == G4OpticalPhoton::OpticalPhotonDefinition ())
   { 
@@ -57,9 +59,9 @@ void SteppingAction::UserSteppingAction(const G4Step * theStep)
       // This includes both the inner and outer unphysical sub-volumes of the core.
       
       std::size_t pos = thePrePVName.find ("FiberCore") ;
-      if (pos == std::string::npos) continue ;
+      if (pos == std::string::npos) return ;
       pos   = thePostPVName.find ("FiberCore") ;
-      if (pos == std::string::npos) continue ;
+      if (pos == std::string::npos) return ;
 
       // Find the chamfer where the photon is traveling in.
       for (int i = 0 ; i < 4 ; ++i)
@@ -67,11 +69,12 @@ void SteppingAction::UserSteppingAction(const G4Step * theStep)
           string num_s = static_cast<ostringstream*>( &(ostringstream() << i) )->str();
           pos = thePrePVName.find (num_s) ;
           if (pos == std::string::npos) continue ;
-          float length = theStep.GetStepLength () ;
+          float length = theStep->GetStepLength () ;
           // attribute the length to the chamfer
           // sum the lengths for each photon separately
         }
+
    } // optical photon
   
-  
+  return ;  
 }
