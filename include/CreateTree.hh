@@ -43,7 +43,11 @@ public:
   
   int Event;
 
-  float totalPhLengthInChamfer[4] ;
+  // total photons length in chamfers
+  float totalPhLengthInChamfer_0 ;
+  float totalPhLengthInChamfer_1 ;
+  float totalPhLengthInChamfer_2 ;
+  float totalPhLengthInChamfer_3 ;
   
   float InitialEnergy;
   
