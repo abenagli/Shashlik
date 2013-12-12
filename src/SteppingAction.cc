@@ -69,8 +69,11 @@ void SteppingAction::UserSteppingAction(const G4Step * theStep)
           string num_s = static_cast<ostringstream*>( &(ostringstream() << i) )->str();
           pos = thePrePVName.find (num_s) ;
           if (pos == std::string::npos) continue ;
-          float length = theStep->GetStepLength () ;
+          G4float length = theStep->GetStepLength () ;
+
           // attribute the length to the chamfer
+          CreateTree::Instance ()->totalPhLengthInChamfer[i] += length/mm ;          
+
           // sum the lengths for each photon separately
         }
 
