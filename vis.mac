@@ -89,4 +89,4 @@
 /gps/direction 0. 0. 1.
 
 #/tracking/verbose 1
-#1/run/beamOn 1
+1/run/beamOn 1
