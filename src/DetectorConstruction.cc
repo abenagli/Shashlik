@@ -169,9 +169,9 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
     for (int i = 1 ; i < fibersNumberInFirstRow ; ++i)
     {
       fiberAxisPosition = getNextCenter(theChamfer, fiberAxisPosition, fiberClad_radius);
-      fFiberCoreInsPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreInsLV,Form("FiberCoreIns%d",edge),worldLV,false,0,false));
-      fFiberCoreOutPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreOutLV,Form("FiberCoreOut%d",edge),worldLV,false,0,false));
-      fFiberCladPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCladLV,Form("FiberClad%d",edge),worldLV,false,0,false));  
+      fFiberCoreInsPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreInsLV_0,Form("FiberCoreIns%d",edge),worldLV,false,0,false));
+      fFiberCoreOutPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCoreOutLV_0,Form("FiberCoreOut%d",edge),worldLV,false,0,false));
+      fFiberCladPV.back ().push_back (new G4PVPlacement(0,G4ThreeVector(offset_x+fiberAxisPosition.x(),offset_y+fiberAxisPosition.y(),0.),fiberCladLV_0,Form("FiberClad%d",edge),worldLV,false,0,false));  
       ++nTotFibers;
     }
     
