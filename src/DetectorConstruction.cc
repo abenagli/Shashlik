@@ -115,20 +115,20 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   //      The core is divided into two sub-cores, made of the same material.
   //      This does not change at all the physics, but eases the check for where the photon is passing through.
  
-  G4VSolid* fiberCoreInsS = new G4Tubs("FiberCoreIns",0.,fiberCore_radius * 0.99,0.5*fiber_length,0.*deg,360.*deg);
-  G4VSolid* fiberCoreOutS = new G4Tubs("FiberCoreOut",fiberCore_radius * 0.99,fiberCore_radius,0.5*fiber_length,0.*deg,360.*deg);
+  G4VSolid* fiberCoreInsS = new G4Tubs("FiberCoreIns",0.,fiberCore_radius * 0.9999,0.5*fiber_length,0.*deg,360.*deg);
+  G4VSolid* fiberCoreOutS = new G4Tubs("FiberCoreOut",fiberCore_radius * 0.9999,fiberCore_radius,0.5*fiber_length,0.*deg,360.*deg);
   G4VSolid* fiberCladS = new G4Tubs("FiberClad",fiberCore_radius,fiberClad_radius,0.5*fiber_length,0.*deg,360.*deg);
   
-  G4LogicalVolume* fiberCoreInsLV_0 = new G4LogicalVolume(fiberCoreInsS,CoMaterial,"FiberCore_0");
-  G4LogicalVolume* fiberCoreOutLV_0 = new G4LogicalVolume(fiberCoreOutS,CoMaterial,"FiberCore_0");
+  G4LogicalVolume* fiberCoreInsLV_0 = new G4LogicalVolume(fiberCoreInsS,CoMaterial,"FiberCoreIns_0");
+  G4LogicalVolume* fiberCoreOutLV_0 = new G4LogicalVolume(fiberCoreOutS,CoMaterial,"FiberCoreOut_0");
   G4LogicalVolume* fiberCladLV_0    = new G4LogicalVolume(fiberCladS,ClMaterial,"FiberClad_0");
 
-  G4LogicalVolume* fiberCoreInsLV_1 = new G4LogicalVolume(fiberCoreInsS,CoMaterial,"FiberCore_1");
-  G4LogicalVolume* fiberCoreOutLV_1 = new G4LogicalVolume(fiberCoreOutS,CoMaterial,"FiberCore_1");
+  G4LogicalVolume* fiberCoreInsLV_1 = new G4LogicalVolume(fiberCoreInsS,CoMaterial,"FiberCoreIns_1");
+  G4LogicalVolume* fiberCoreOutLV_1 = new G4LogicalVolume(fiberCoreOutS,CoMaterial,"FiberCoreOut_1");
   G4LogicalVolume* fiberCladLV_1    = new G4LogicalVolume(fiberCladS,ClMaterial,"FiberClad_1");
 
-  G4LogicalVolume* fiberCoreInsLV_2 = new G4LogicalVolume(fiberCoreInsS,CoMaterial,"FiberCore_2");
-  G4LogicalVolume* fiberCoreOutLV_2 = new G4LogicalVolume(fiberCoreOutS,CoMaterial,"FiberCore_2");
+  G4LogicalVolume* fiberCoreInsLV_2 = new G4LogicalVolume(fiberCoreInsS,CoMaterial,"FiberCoreIns_2");
+  G4LogicalVolume* fiberCoreOutLV_2 = new G4LogicalVolume(fiberCoreOutS,CoMaterial,"FiberCoreOut_2");
   G4LogicalVolume* fiberCladLV_2    = new G4LogicalVolume(fiberCladS,ClMaterial,"FiberClad_2");
 
 
@@ -294,13 +294,13 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   bigfiberClad_radius *= 0.95 ;
   float bigfiberCore_radius = 0.5 * bigfiberClad_radius ;
 
-  G4VSolid* bigfiberCoreInsS = new G4Tubs("bigfiberCoreIns",0.,bigfiberCore_radius * 0.99,0.5*fiber_length,0.*deg,360.*deg);
-  G4VSolid* bigfiberCoreOutS = new G4Tubs("bigfiberCoreOut",bigfiberCore_radius * 0.99,bigfiberCore_radius,0.5*fiber_length,0.*deg,360.*deg);
+  G4VSolid* bigfiberCoreInsS = new G4Tubs("bigfiberCoreIns",0.,bigfiberCore_radius * 0.9999,0.5*fiber_length,0.*deg,360.*deg);
+  G4VSolid* bigfiberCoreOutS = new G4Tubs("bigfiberCoreOut",bigfiberCore_radius * 0.9999,bigfiberCore_radius,0.5*fiber_length,0.*deg,360.*deg);
   G4VSolid* bigfiberCladS = new G4Tubs("bigfiberClad",bigfiberCore_radius,bigfiberClad_radius,0.5*fiber_length,0.*deg,360.*deg);
   
-  G4LogicalVolume* bigfiberCoreInsLV = new G4LogicalVolume(bigfiberCoreInsS,CoMaterial,"bigfiberCoreIns");
-  G4LogicalVolume* bigfiberCoreOutLV = new G4LogicalVolume(bigfiberCoreOutS,CoMaterial,"bigfiberCoreOut");
-  G4LogicalVolume* bigfiberCladLV = new G4LogicalVolume(bigfiberCladS,ClMaterial,"bigfiberClad");
+  G4LogicalVolume* bigfiberCoreInsLV = new G4LogicalVolume(bigfiberCoreInsS,CoMaterial,"fiberCoreIns_3");
+  G4LogicalVolume* bigfiberCoreOutLV = new G4LogicalVolume(bigfiberCoreOutS,CoMaterial,"fiberCoreOut_3");
+  G4LogicalVolume* bigfiberCladLV = new G4LogicalVolume(bigfiberCladS,ClMaterial,"fiberClad_3");
 
   fFiberCoreInsPV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
   fFiberCoreOutPV.push_back (std::vector <G4VPhysicalVolume*> ()) ;
