@@ -13,10 +13,7 @@ CreateTree::CreateTree(TString name, bool energy_fiber, bool init_data, bool pos
     return;
   }
 
-  this->GetTree()->Branch ("totalPhLengthInChamfer_0",        &this->totalPhLengthInChamfer_0,        "totalPhLengthInChamfer_0/F");
-  this->GetTree()->Branch ("totalPhLengthInChamfer_1",        &this->totalPhLengthInChamfer_1,        "totalPhLengthInChamfer_1/F");
-  this->GetTree()->Branch ("totalPhLengthInChamfer_2",        &this->totalPhLengthInChamfer_2,        "totalPhLengthInChamfer_2/F");
-  this->GetTree()->Branch ("totalPhLengthInChamfer_3",        &this->totalPhLengthInChamfer_3,        "totalPhLengthInChamfer_3/F");
+  this->GetTree()->Branch("totalPhLengthInChamfer", &this->totalPhLengthInChamfer, "totalPhLengthInChamfer[4]/F") ;
 
   this -> ENERGY_FIBER 	= energy_fiber;
   this -> INIT_DATA    	= init_data;
@@ -141,10 +138,7 @@ void CreateTree::Clear()
 {
   Event	= 0;
 
-  totalPhLengthInChamfer_0 = 0. ;
-  totalPhLengthInChamfer_1 = 0. ;
-  totalPhLengthInChamfer_2 = 0. ;
-  totalPhLengthInChamfer_3 = 0. ;
+  for (int i = 0 ; i < 4 ; ++i) totalPhLengthInChamfer[i] = 0. ;
   
   Total_delta_fibers         = 0;
   Total_energy_fibers        = 0;
