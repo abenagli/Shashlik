@@ -369,13 +369,21 @@ G4VPhysicalVolume* DetectorConstruction::Construct()
   G4VisAttributes* VisAttFiberCore = new G4VisAttributes(green);
   VisAttFiberCore->SetVisibility(true);
   VisAttFiberCore->SetForceWireframe(false);
-  fiberCoreLV->SetVisAttributes(VisAttFiberCore);  
-  bigfiberCoreLV->SetVisAttributes(VisAttFiberCore);  
+  fiberCoreInsLV_0->SetVisAttributes(VisAttFiberCore);  
+  fiberCoreOutLV_0->SetVisAttributes(VisAttFiberCore);  
+  fiberCoreInsLV_1->SetVisAttributes(VisAttFiberCore);  
+  fiberCoreOutLV_1->SetVisAttributes(VisAttFiberCore);  
+  fiberCoreInsLV_2->SetVisAttributes(VisAttFiberCore);  
+  fiberCoreOutLV_2->SetVisAttributes(VisAttFiberCore);  
+  bigfiberCoreInsLV->SetVisAttributes(VisAttFiberCore);  
+  bigfiberCoreOutLV->SetVisAttributes(VisAttFiberCore);  
   
   G4VisAttributes* VisAttFiberClad = new G4VisAttributes(cyan);
   VisAttFiberClad->SetVisibility(true);
   VisAttFiberClad->SetForceWireframe(false);
-  fiberCladLV->SetVisAttributes(VisAttFiberClad);  
+  fiberCladLV_0->SetVisAttributes(VisAttFiberClad);  
+  fiberCladLV_1->SetVisAttributes(VisAttFiberClad);  
+  fiberCladLV_2->SetVisAttributes(VisAttFiberClad);  
   bigfiberCladLV->SetVisAttributes(VisAttFiberClad);  
   
   
