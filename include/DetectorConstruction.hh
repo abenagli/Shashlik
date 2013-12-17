@@ -70,75 +70,75 @@
 class DetectorConstruction : public G4VUserDetectorConstruction
 {
 public:
-  DetectorConstruction();
-  DetectorConstruction(const string& configFileName);
-  ~DetectorConstruction();
+  DetectorConstruction  () ;
+  DetectorConstruction  (const string& configFileName) ;
+  ~DetectorConstruction () ;
   
-  G4double GetModule_x() const { return module_x; };
-  G4double GetModule_y() const { return module_y; };
-  G4double GetModule_z() const { return module_z; };
+  G4double GetModule_x () const { return module_x ; } ;
+  G4double GetModule_y () const { return module_y ; } ;
+  G4double GetModule_z () const { return module_z ; } ;
   
-  void fillPolygon(std::vector<G4TwoVector>& theBase, const float& side, const float& chamfer);
+  void fillPolygon (std::vector<G4TwoVector>& theBase, const float& side, const float& chamfer) ;
   
-  std::pair<G4TwoVector,G4TwoVector> getChamfer(std::vector<G4TwoVector>& theBase, const int& index);
-  G4TwoVector centerOfTheFirstFiber(std::pair<G4TwoVector,G4TwoVector>& theChamfer, const int& fibresNumberInRow, const float& fiberExternalRadius, const int& numberOfRadius);
-  G4TwoVector centerOfTheFirstFiberPG(std::pair<G4TwoVector,G4TwoVector>& theChamfer, const int& fibresNumberInRow, const float& fiberExternalRadius);
-  G4TwoVector getNextCenter(std::pair<G4TwoVector,G4TwoVector>& theChamfer, G4TwoVector& thisCenter, const float& fiberExternalRadius);
-  G4TwoVector centerOfTheFirstFibreOnSecondLayer (std::pair<G4TwoVector, G4TwoVector> & theChamfer, const float & fiberExternalRadius, G4TwoVector previousLayerStart);
-  bool checkIfOutOfChamfer (double radius, G4TwoVector centre, std::vector<G4TwoVector> solid, int chamferIndex);
+  std::pair<G4TwoVector,G4TwoVector> getChamfer  (std::vector<G4TwoVector>& theBase, const int& index) ;
+  G4TwoVector centerOfTheFirstFiber              (std::pair<G4TwoVector,G4TwoVector>& theChamfer, const int& fibresNumberInRow, const float& fiberExternalRadius, const int& numberOfRadius) ;
+  G4TwoVector centerOfTheFirstFiberPG            (std::pair<G4TwoVector,G4TwoVector>& theChamfer, const int& fibresNumberInRow, const float& fiberExternalRadius) ;
+  G4TwoVector getNextCenter                      (std::pair<G4TwoVector,G4TwoVector>& theChamfer, G4TwoVector& thisCenter, const float& fiberExternalRadius) ;
+  G4TwoVector centerOfTheFirstFibreOnSecondLayer (std::pair<G4TwoVector, G4TwoVector> & theChamfer, const float & fiberExternalRadius, G4TwoVector previousLayerStart) ;
+  bool checkIfOutOfChamfer                       (double radius, G4TwoVector centre, std::vector<G4TwoVector> solid, int chamferIndex) ;
   
 public:
-  G4VPhysicalVolume* Construct();
+  G4VPhysicalVolume* Construct () ;
   
 private:
-  G4VPhysicalVolume* fAbsorberPV;      // the absorber physical volume
-  G4VPhysicalVolume* fCrystalPV;       // the crystal physical volume
-//  G4VPhysicalVolume* fFiberCorePV[4][100];   // the fiber physical volume
-//  G4VPhysicalVolume* fFiberCladPV[4][100];   // the fiber physical volume
+  G4VPhysicalVolume* fAbsorberPV ;      // the absorber physical volume
+  G4VPhysicalVolume* fCrystalPV ;       // the crystal physical volume
+//  G4VPhysicalVolume* fFiberCorePV[4][100] ;   // the fiber physical volume
+//  G4VPhysicalVolume* fFiberCladPV[4][100] ;   // the fiber physical volume
 
   std::vector <std::vector <G4VPhysicalVolume*> > fFiberCoreInsPV ;   // the fiber physical volume
   std::vector <std::vector <G4VPhysicalVolume*> > fFiberCoreOutPV ;   // the fiber physical volume
   std::vector <std::vector <G4VPhysicalVolume*> > fFiberCladPV ;      // the fiber physical volume
   
-  G4double  expHall_x;
-  G4double  expHall_y;
-  G4double  expHall_z;
+  G4double  expHall_x ;
+  G4double  expHall_y ;
+  G4double  expHall_z ;
             
-  G4double  chamfer;
-  G4double  module_xy;
-  G4double  module_x;
-  G4double  module_y;
-  G4double  module_z;
-  G4double  spacing_z;
-  G4int     nLayers_z;
+  G4double  chamfer ;
+  G4double  module_xy ;
+  G4double  module_x ;
+  G4double  module_y ;
+  G4double  module_z ;
+  G4double  spacing_z ;
+  G4int     nLayers_z ;
   
-  G4int    abs_material;
-  G4double abs_d;
+  G4int    abs_material ;
+  G4double abs_d ;
   
-  G4int    crystal_material;
-  G4int    crystal_lightyield;
-  G4double crystal_risetime;
-  G4double crystal_abslength;
-  G4double crystal_induced_abslength;
-  G4double crystal_d;
+  G4int    crystal_material ;
+  G4int    crystal_lightyield ;
+  G4double crystal_risetime ;
+  G4double crystal_abslength ;
+  G4double crystal_induced_abslength ;
+  G4double crystal_d ;
   
-  G4int    fiberCore_material;
-  G4double fiberCore_radius;
-  G4int    fiberClad_material;
-  G4double fiberClad_radius;
-  G4double fiber_length;
+  G4int    fiberCore_material ;
+  G4double fiberCore_radius ;
+  G4int    fiberClad_material ;
+  G4double fiberClad_radius ;
+  G4double fiber_length ;
   
-  G4double depth;
+  G4double depth ;
   
-  void readConfigFile(string configFileName);
+  void readConfigFile (string configFileName) ;
   
   //Materials
-  void initializeMaterials();
-  G4Material* AbMaterial;
-  G4Material* ScMaterial;
-  G4Material* CoMaterial;
-  G4Material* ClMaterial;
-};
+  void initializeMaterials () ;
+  G4Material* AbMaterial ;
+  G4Material* ScMaterial ;
+  G4Material* CoMaterial ;
+  G4Material* ClMaterial ;
+} ;
 
 //....oooOO0OOooo........oooOO0OOooo........oooOO0OOooo........oooOO0OOooo......
 

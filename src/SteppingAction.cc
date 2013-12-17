@@ -49,15 +49,15 @@ void SteppingAction::UserSteppingAction(const G4Step * theStep)
   G4StepPoint* thePostPoint = theStep->GetPostStepPoint();
   G4VPhysicalVolume* thePrePV  = thePrePoint ->GetPhysicalVolume();
   G4VPhysicalVolume* thePostPV = thePostPoint->GetPhysicalVolume();
-  G4String thePrePVName  = ""; if( thePrePV )  thePrePVName  = thePrePV  -> GetName();
-  G4String thePostPVName = ""; if( thePostPV ) thePostPVName = thePostPV -> GetName();
-    
+  G4String thePrePVName  = "" ; if( thePrePV )  thePrePVName  = thePrePV  -> GetName();
+  G4String thePostPVName = "" ; if( thePostPV ) thePostPVName = thePostPV -> GetName();
+
   // optical photon
   if( particleType == G4OpticalPhoton::OpticalPhotonDefinition ())
   { 
       // Check that the step starts and ends in any of the core volumes of any fibers.
       // This includes both the inner and outer unphysical sub-volumes of the core.
-      
+
       std::size_t pos = thePrePVName.find ("FiberCore") ;
       if (pos == std::string::npos) return ;
       pos   = thePostPVName.find ("FiberCore") ;
@@ -72,12 +72,14 @@ void SteppingAction::UserSteppingAction(const G4Step * theStep)
           G4float length = theStep->GetStepLength () ;
 
           // attribute the length to the chamfer
-          CreateTree::Instance ()->totalPhLengthInChamfer[i] += length/mm ;          
+          CreateTree::Instance ()->totalPhLengthInChamfer[i] += length/mm ;    
+//          cout << "    adding " << length 
+//               << " to " << CreateTree::Instance ()->totalPhLengthInChamfer[i]
+//               << " for chamfer " << i << endl ;
 
           // sum the lengths for each photon separately
         }
 
    } // optical photon
-  
   return ;  
 }

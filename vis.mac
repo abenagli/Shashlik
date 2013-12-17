@@ -13,12 +13,14 @@
 /vis/drawVolume
 
 # Specify view angle:
-/vis/viewer/set/viewpointThetaPhi 180 0 deg
-#/vis/viewer/set/viewpointThetaPhi 270 0 deg
+# from above
+#/vis/viewer/set/viewpointThetaPhi 180 0 deg
+# from the side
+/vis/viewer/set/viewpointThetaPhi 270 0 deg 
 
 # Specify zoom value:
-/vis/viewer/zoomTo 200
-#/vis/viewer/zoomTo 5
+#/vis/viewer/zoomTo 200
+/vis/viewer/zoomTo 5
 
 # Specify style (surface or wireframe):
 #/vis/viewer/set/style wireframe
@@ -73,6 +75,7 @@
 
 
 
+#/gps/energy 10 GeV
 /gps/energy 10 GeV
 /gps/particle e-
 
@@ -89,4 +92,4 @@
 /gps/direction 0. 0. 1.
 
 #/tracking/verbose 1
-1/run/beamOn 1
+/run/beamOn 1
