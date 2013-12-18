@@ -43,7 +43,7 @@ int CreateTree::Fill ()
        iMap != fsingleGammaInfo.end () ;
        ++iMap)
     {
-      ++numPhLengthInChamfer[iMap->second->first] ;
+      ++numPhLengthInChamfer[iMap->second.first] ;
     }
   return this->GetTree ()->Fill () ; 
 }
@@ -69,10 +69,10 @@ bool CreateTree::Write ()
 
 void CreateTree::addPhoton (int trackId, float length, int chamferId)
 {
-  if (fsingleGammaInfo.find (trackID) == fsingleGammaInfo.end ())
-    fsingleGammaInfo[trackID] = std::pair<int, float> (0, length) ;
+  if (fsingleGammaInfo.find (trackId) == fsingleGammaInfo.end ())
+    fsingleGammaInfo[trackId] = std::pair<int, float> (0, length) ;
   else  
-    fsingleGammaInfo[trackID].second += length ;
+    fsingleGammaInfo[trackId].second += length ;
   return ;
 }
 
