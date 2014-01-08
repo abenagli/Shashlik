@@ -16,7 +16,7 @@ private:
   TString fname ;
   std::map <int, std::pair<int, float> > fsingleGammaInfo ;
   //        photonID       chamferID  lengthInChamfer 
-  // lengthInChamfer is redundant 
+  // lengthInChamfer is redundant
   
 public:
   
@@ -37,6 +37,6 @@ public:
   
   int Event ;
   float totalPhLengthInChamfer[4] ;           // total photons length in chamfers
-  float numPhLengthInChamfer[4] ;             // number of photons in chamfers
+  int   numPhotonsInChamfer[4] ;              // number of photons in chamfers
 
 } ;
